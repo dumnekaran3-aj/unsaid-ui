@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Unsaid",
+    "slug": "unsaid",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FFE3EC"
+    },
+    "android": {
+      "package": "com.unsaid.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFE3EC"
+      }
+    },
+    "plugins": []
+  }
+}
