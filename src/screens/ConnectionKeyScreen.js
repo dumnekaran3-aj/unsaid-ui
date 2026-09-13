@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Share } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../context/AuthContext";
 import api from "../config/api";
+import { connectSocket, disconnectSocket } from "../config/socket";
 
 export default function ConnectionKeyScreen() {
-  const { user, setUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const [partnerKey, setPartnerKey] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -14,8 +16,11 @@ export default function ConnectionKeyScreen() {
     try {
       const res = await api.post("/connection/link", { partnerKey: partnerKey.trim() });
       Alert.alert("Connected! 💕", res.data.message);
-      // Update local user state so RootNavigator switches to the main app
-      setUser((prev) => ({ ...prev, partnerId: res.data.connection.id }));
+      await updateUser({ partnerId: res.data.connection.id });
+
+      disconnectSocket();
+      const token = await AsyncStorage.getItem("unsaid_token");
+      connectSocket(token);
     } catch (err) {
       Alert.alert("Couldn't connect", err.response?.data?.message || "Invalid key");
     } finally {
@@ -51,6 +56,10 @@ export default function ConnectionKeyScreen() {
 
       <TouchableOpacity style={styles.button} onPress={handleConnect} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? "Connecting..." : "Connect"}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={logout} style={{ marginTop: 20 }}>
+        <Text style={{ textAlign: "center", color: "#999" }}>Logout</Text>
       </TouchableOpacity>
     </View>
   );

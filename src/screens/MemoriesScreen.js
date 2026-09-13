@@ -1,12 +1,52 @@
-import React from "react";
-import { View, Text, FlatList, Image, StyleSheet, Dimensions } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+import api from "../config/api";
 
 const numColumns = 3;
 const size = Dimensions.get("window").width / numColumns;
 
 export default function MemoriesScreen() {
-  // TODO: fetch from GET /api/media (paginated, by connectionId)
-  const [media] = React.useState([]);
+  const [media, setMedia] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchMedia = useCallback(async () => {
+    try {
+      const res = await api.get("/media");
+      setMedia(res.data.media);
+    } catch (err) {
+      console.log("Failed to load memories:", err.response?.data?.message || err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMedia();
+  }, [fetchMedia]);
+
+  function onRefresh() {
+    setRefreshing(true);
+    fetchMedia();
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.emptyContainer}>
+        <ActivityIndicator color="#D6336C" size="large" />
+      </View>
+    );
+  }
 
   if (media.length === 0) {
     return (
@@ -22,6 +62,7 @@ export default function MemoriesScreen() {
       data={media}
       numColumns={numColumns}
       keyExtractor={(item) => item._id}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       renderItem={({ item }) => (
         <Image source={{ uri: item.url }} style={{ width: size, height: size }} />
       )}

@@ -8,6 +8,8 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Resets to false on every app restart — so PIN is asked once per app session
+  const [chatUnlocked, setChatUnlocked] = useState(false);
 
   useEffect(() => {
     loadStoredUser();
@@ -53,10 +55,23 @@ export function AuthProvider({ children }) {
     await AsyncStorage.removeItem("unsaid_user");
     disconnectSocket();
     setUser(null);
+    setChatUnlocked(false);
+  }
+
+  // Updates both the in-memory user state AND AsyncStorage, so changes
+  // (like partnerId after connecting) survive an app refresh/restart.
+  async function updateUser(partialUpdate) {
+    setUser((prev) => {
+      const updated = { ...prev, ...partialUpdate };
+      AsyncStorage.setItem("unsaid_user", JSON.stringify(updated));
+      return updated;
+    });
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{ user, setUser, updateUser, loading, login, signup, logout, chatUnlocked, setChatUnlocked }}
+    >
       {children}
     </AuthContext.Provider>
   );
